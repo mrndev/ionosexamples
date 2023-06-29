@@ -1,7 +1,7 @@
 # ionosexamples
 Diverse examples how to use the IONOS APIs and command line tools
 
-## Create users and groups with ionosctl
+## #1 Create users and groups with ionosctl
 
 Sometimes it may be useful to manage users and user groups on the command line. For example if you need to add multiple "technical" user accounts for your applications, using a script might be more productive than managing the accounts manually. Here are some example commands to get you started. The example adds one application user account, creates a group with S3 privileges and adds the user to the group. The App can then use the user account specific S3 secret to use the S3 services.
 
