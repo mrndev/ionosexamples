@@ -64,3 +64,70 @@ s3cmd mb s3://mybucket-2957894
 
 s3cmd ls
 ```
+
+
+## #2 Configure s3cmd for IONOS S3
+s3cmd is a useful tool for troubleshooting, testing s3. You can also use it to integrate to applications to S3 with a script. Many storage applications have a native support for s3, but sometimes one needs to use a script for uploading, downloading and generally managing the data and the bucket configuration Below is an example shell session of the configuration. You will need to have the key id and secret key in the environment variables. Alternatively you can omit the "access_key" and "secret_key" from the command. The configuration process will then ask for these values.
+
+```
+~$ s3cmd --configure \
+       --access_key $KEYID \
+       --secret_key $KEY_SECRET \
+       --host 's3-eu-central-1.ionoscloud.com' \
+       --host-bucket '%(bucket)s.s3-eu-central-1.ionoscloud.com' \
+       --region de
+
+Enter new values or accept defaults in brackets with Enter.
+Refer to user manual for detailed description of all options.
+
+Access key and Secret key are your identifiers for Amazon S3. Leave them empty for using the env variables.
+Access Key [xxx]:
+Secret Key [xxx]:
+Default Region [de]:
+
+Use "s3.amazonaws.com" for S3 Endpoint and not modify it to the target Amazon S3.
+S3 Endpoint [s3-eu-central-1.ionoscloud.com]:
+
+Use "%(bucket)s.s3.amazonaws.com" to the target Amazon S3. "%(bucket)s" and "%(location)s" vars can be used
+if the target S3 system supports dns based buckets.
+DNS-style bucket+hostname:port template for accessing a bucket [%(bucket)s.s3-eu-central-1.ionoscloud.com]:
+
+Encryption password is used to protect your files from reading
+by unauthorized persons while in transfer to S3
+Encryption password [dummytest]:
+Path to GPG program [/usr/bin/gpg]:
+
+When using secure HTTPS protocol all communication with Amazon S3
+servers is protected from 3rd party eavesdropping. This method is
+slower than plain HTTP, and can only be proxied with Python 2.7 or newer
+Use HTTPS protocol [Yes]:
+
+On some networks all internet access must go through a HTTP proxy.
+Try setting it here if you can't connect to S3 directly
+HTTP Proxy server name:
+
+New settings:
+  Access Key: xxx
+  Secret Key: xxxx
+  Default Region: de
+  S3 Endpoint: s3-eu-central-1.ionoscloud.com
+  DNS-style bucket+hostname:port template for accessing a bucket: %(bucket)s.s3-eu-central-1.ionoscloud.com
+  Encryption password: dummytest
+  Path to GPG program: /usr/bin/gpg
+  Use HTTPS protocol: True
+  HTTP Proxy server name:
+  HTTP Proxy server port: 0
+
+Test access with supplied credentials? [Y/n]
+Please wait, attempting to list all buckets...
+Success. Your access key and secret key worked fine :-)
+
+Now verifying that encryption works...
+Success. Encryption and decryption worked fine :-)
+
+Save settings? [y/N] y
+Configuration saved to '/home/mnylund/.s3cfg'
+~$ s3cmd ls
+2023-07-18 08:22  s3://mybucket-123846
+
+```
