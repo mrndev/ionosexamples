@@ -141,7 +141,8 @@ If your email address is used for multiple contracts, you ewill need to provide 
 
 ```curl --user me@example.com -H "X-Contract-Number: XXXXXXX"  https://api.ionos.com/auth/v1/tokens/generate```
 
-For the ionos shell tools, the API token needs to be extracted from the returned json structure into the IONOS_TOKEN environment variable. With the following command you can extract the token from the json structure and store i into a file
+For the ionos shell tools, the API token needs to be extracted from the returned json structure into the IONOS_TOKEN environment variable. With the following command you can extract the token from the json structure and store i into a file:
+
 ```curl --user me@example.com https://api.ionos.com/auth/v1/tokens/generate  | jq -r ".token" > .mytoken```
 
 
