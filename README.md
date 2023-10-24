@@ -5,7 +5,7 @@ Diverse examples how to use the IONOS APIs and command line tools
 
 Sometimes it may be useful to manage users and user groups on the command line. For example if you need to add multiple "technical" user accounts for your applications, using a script might be more productive than managing the accounts manually. Here are some example commands to get you started. The example adds one application user account, creates a group with S3 privileges and adds the user to the group. The App can then use the user account specific S3 secret to use the S3 services.
 
-```
+```bash
 # Set a password for the application user account into a env variable without echoing it. Depending
 # on your environment you could of course add the password here instead of asking it.
 # PSWD=xxx
@@ -144,5 +144,39 @@ If your email address is used for multiple contracts, you ewill need to provide 
 For the ionos shell tools, the API token needs to be extracted from the returned json structure into the IONOS_TOKEN environment variable. With the following command you can extract the token from the json structure and store i into a file:
 
 ```curl --user me@example.com https://api.ionos.com/auth/v1/tokens/generate  | jq -r ".token" > .mytoken```
+
+## #4 Configure the aws CLI for IONOS S3
+Above I have used the s3cmd to copy data to/from the IONOS cloud, but some advanced features like object locking and SSE-C are not supported by the s3cmd. For the advanced tasks one needs to use the aws CLI. The following snippet shows how to configure the aws CLI for IONOS S3. You might also just use the aws cli for all tasks - s3cmd does not really provide anything that he aws cli would not provide. It is more like a matter of taste...
+```bash
+# 1. First you need to install the aws CLI. Follow instructions here:
+# https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+
+# 2. Configure the aws CLI for IONOS S3. You will get the access key and secret
+# access key from the data center designer GUI. replace the dummy keys below.
+aws configure
+# AWS Access Key ID [None]: 5cda83a9e16affddgssgsdsdfg
+# AWS Secret Access Key [None]: vMfVHP6Bq3sxHrMfTkXpqSbz29Yfsdfsdfsdfsd
+# Default region name [None]: de
+# Default output format [None]: json
+
+# 3. Export these variables so that you dont need to add the --endpoint-url on
+# every command line. The example here use the Franfurt S3. You will need to
+# refer to
+# https://docs.ionos.com/cloud/managed-services/s3-object-storage/endpoints for
+# other locations
+export AWS_DEFAULT_REGION=de
+export AWS_ENDPOINT_URL=https://s3-eu-central-1.ionoscloud.com
+
+# 4. Add aws command line completion. This is optional but with it, using the aws cli is
+# more fun. If you use the tool often, you can add the line into your .bashrc
+complete -C '$(which aws_completer)' aws
+
+# Now you are all set to use the aws CLI with IONOS S3!
+
+# Let us create a bucket:
+aws s3 mb s3://my-bucket-123763
+```
+
+more examples in the official documentation at: https://docs.ionos.com/cloud/managed-services/s3-object-storage/s3-tools/awscli
 
 
