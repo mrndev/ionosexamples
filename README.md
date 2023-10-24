@@ -179,4 +179,63 @@ aws s3 mb s3://my-bucket-123763
 
 more examples in the official documentation at: https://docs.ionos.com/cloud/managed-services/s3-object-storage/s3-tools/awscli
 
+## #5 Use SSE-C encryption with aws CLI and IONOS S3
+
+SSE-C (Server Side Encryption with Customer managed key) is a standard S3 feature which is supported by the IONOS S3 service. The following code shows how to use SSE-C with  aws CLI
+
+```bash
+# This example shows how to use SSE-C - Server Side Encryption with a Customer
+# provided key. Key needs to be provided on every request.
+
+# Lets make a test file with random data
+TESTFILE=testfile.1
+BUCKET_NAME=xxx-123 # add your test bucket name here (as always - needs to be domain unique)
+
+# create a 10MB test file with random data
+dd if=/dev/urandom of=$TESTFILE bs=1M count=10
+
+# create the test bucket
+aws s3 mb s3://$BUCKET_NAME
+
+# Dummy key for the AES256 encryption. Needs to be 32 characters. Prepare also
+# the other values needed for the commands
+AES256_KEY="aaaaaaaabbbbbbbbccccccccdddddddd"
+BASE64_ENCODED_KEY=$(echo -n $AES256_KEY|base64)
+# make the md5 checksum which is needed with the 'aws s3api' low level commands
+# (not needed with 'aws s3' commands)
+BASE64_ENCODED_KEY_MD5=$(echo -n "$AES256_KEY" | md5sum | awk '{print $1}' | xxd -r -p | base64)
+echo $AES256_KEY
+echo $BASE64_ENCODED_KEY
+echo $BASE64_ENCODED_KEY_MD5
+
+# We will put the test file with the s3cmd put-object command, just to give a
+# reference how the key values are used with the 'aws s3api ...' low level commands.
+# Normally I would use the 'aws s3 ...' commands instead which are more convinient
+# (and no need to generate md5 checksums yourself). Upload the test file:
+aws s3api put-object \
+        --bucket "$BUCKET_NAME" \
+        --key $TESTFILE \
+        --body $TESTFILE \
+        --sse-customer-algorithm AES256 \
+        --sse-customer-key "$BASE64_ENCODED_KEY" \
+        --sse-customer-key-md5 "$BASE64_ENCODED_KEY_MD5"
+
+
+# Upload a file with SSE-C encryption using the aws s3 command (more convinient)
+aws s3 cp --sse-c --sse-c-key "$AES256_KEY" $TESTFILE s3://$BUCKET_NAME/${TESTFILE}.2
+
+aws s3 ls s3://$BUCKET_NAME
+
+# Download file with SSE-C encryption. Leawing the encryption parameters out
+# would lead to a bad request error
+aws s3 cp --sse-c --sse-c-key "$AES256_KEY" s3://$BUCKET_NAME/$TESTFILE ./${TESTFILE}.readback
+
+# For the sake of end to end testing, check that the files do not differ
+diff -q $TESTFILE ${TESTFILE}.readback
+
+# remove the bucket content and the bucket itself
+aws s3 rm --recursive s3://$BUCKET_NAME
+aws s3 rb s3://$BUCKET_NAME
+
+```
 
