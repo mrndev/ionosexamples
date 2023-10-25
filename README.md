@@ -145,6 +145,12 @@ For the ionos shell tools, the API token needs to be extracted from the returned
 
 ```curl --user me@example.com https://api.ionos.com/auth/v1/tokens/generate  | jq -r ".token" > .mytoken```
 
+Alternatively, you can also use ionosctl to generate a token (you will need to have the IONOS_USERNAME and IONOS_PASSWORD envoronment variables exported
+```bash
+ionosctl token generate
+# eyJ0eXAiOiJKV1QiLC....
+```
+
 ## #4 Configure the aws CLI for IONOS S3
 Above I have used the s3cmd to copy data to/from the IONOS cloud, but some advanced features like object locking and SSE-C are not supported by the s3cmd. For the advanced tasks one needs to use the aws CLI. The following snippet shows how to configure the aws CLI for IONOS S3. You might also just use the aws cli for all tasks - s3cmd does not really provide anything that he aws cli would not provide. It is more like a matter of taste...
 ```bash
