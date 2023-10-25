@@ -145,7 +145,7 @@ For the ionos shell tools, the API token needs to be extracted from the returned
 
 ```curl --user me@example.com https://api.ionos.com/auth/v1/tokens/generate  | jq -r ".token" > .mytoken```
 
-Alternatively, you can also use ionosctl to generate a token (you will need to have the IONOS_USERNAME and IONOS_PASSWORD envoronment variables exported
+Alternatively, you can also use ionosctl to generate a token (you will need to have the IONOS_USERNAME and IONOS_PASSWORD environment variables exported)
 ```bash
 ionosctl token generate
 # eyJ0eXAiOiJKV1QiLC....
