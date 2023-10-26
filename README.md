@@ -245,3 +245,43 @@ aws s3 rb s3://$BUCKET_NAME
 
 ```
 
+## #6 Enable SSE-S3 encryption with aws CLI for IONOS S3
+SSE-S3 is server side encryption with S3 managed keys. Turning it on does not have notable 
+performance hit (at least i could not measure any difference in upload speed). 
+It ensures that data at rest is qncrypted.
+
+```bash
+# This example shows how to use the SSE-S3 encryption (Server Side Encryption
+# with S3 managed keys). Using SSE-S3 is generally more convenient that the
+# SSE-C since the keys do not need to be managed on the client side. But, you
+# will need to trust the S3 infrastructure. Which one to use, depends solely
+# on your security requirements.
+
+TESTFILE=testfile-sse-s3
+BUCKET_NAME=encryption-test-sse-s3-834832
+
+# Lets make a test file with random data.
+dd if=/dev/urandom of=$TESTFILE bs=1M count=1k
+
+# create the test bucket
+aws s3 mb s3://$BUCKET_NAME
+
+# Turn on the SSE-S3 encryption for the bucket. This command succeeds even if
+# there would be already data in the bucket. The existing data is however not
+# automatically encrypted.
+aws s3api put-bucket-encryption --bucket $BUCKET_NAME \
+        --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}'
+
+# Check that we have the right configuration
+aws s3api get-bucket-encryption --bucket $BUCKET_NAME
+
+# Now lets copy the test file into the bucket
+time aws s3 cp $TESTFILE s3://$BUCKET_NAME
+
+aws s3api head-object --bucket $BUCKET_NAME --key $TESTFILE
+
+# remove the test data and the bucket
+aws s3 rm --recursive s3://$BUCKET_NAME
+aws s3 rb s3://$BUCKET_NAME
+```
+
