@@ -285,3 +285,88 @@ aws s3 rm --recursive s3://$BUCKET_NAME
 aws s3 rb s3://$BUCKET_NAME
 ```
 
+## #7 Create a simple datacenter with one VM just with ionosctl
+This example shows how you can create a virtual datacenter just with ionosctl in Linux shell (Bash). This is not meant to be a script that you can just run on one go (there is not error checking), but a set of exmple commands you can use to study how the virtual data center (VDC) is put togehter with ionosctl. You would normally use something like terraform for IaC, because scripts like this get quickly unmanageable (in fact it already is unamageable because there is no error checking). But, the example may however be be useful for ad-hoc testing or PoCs.
+
+```bash
+# First we set some variables to help with the commands below and create the basics in the VDC (the VC itself and the public network)
+LOCATION="de/fra"
+DCNAME="My VDC in $LOCATION"
+IMAGE_ALIAS="ubuntu:latest"
+PUBLIC_LAN_NAME=Internet
+SERVERNAME="MyVm"
+HOSTNAME=$SERVERNAME
+
+# create the data center and get the datacenter ID
+ionosctl datacenter create -w --name "$DCNAME" --location "$LOCATION"
+
+# get the datacenter ID
+DCID=$(ionosctl datacenter list|grep "\<$DCNAME\>"|awk '{print $1}')
+echo $DCID
+
+# Create the public LAN. You could use the grep/awk like above, but it is possible to
+# select the value with the ionosctl arguments. You run into troubles however if you
+# have spaces in the filter parametes (spaces in the Name for example)
+ionosctl lan create --datacenter-id $DCID --public=true --name "$PUBLIC_LAN_NAME" -w
+LAN_ID=$(ionosctl lan list --datacenter-id $DCID --cols LanId --no-headers --filters Name=$PUBLIC_LAN_NAME)
+echo $LAN_ID
+
+# Now, let's create a small server. With this command it will be a VM without any
+# network interfaces (NICs) or volumes. They are added below.
+ionosctl server create \
+        --datacenter-id "$DCID" \
+        --type ENTERPRISE \
+        --name "$SERVERNAME" \
+        --cores 1 \
+        --ram $((2*1024)) \
+        --cpu-family INTEL_ICELAKE \
+        -w -W
+
+# Get the server ID and store in into a variable
+SERVERID=$(ionosctl server list --datacenter-id $DCID | grep "$SERVERNAME" | awk '{print $1}')
+echo $SERVERID
+
+# Create a NIC and get the public IP address after creation.
+ionosctl nic create \
+        --datacenter-id $DCID \
+        --server-id $SERVERID \
+        --name "MyInternetNIC" \
+        --lan-id "$LANID" \
+        -w
+SERVERIP=$(ionosctl nic list --datacenter-id $DCID --server-id $SERVERID | grep Internet | awk '{print $5}')
+echo $SERVERIP
+
+# Now, if you look into the the data center designer, you will find a VM
+# connected to internet. But it has not boot volume yet. Let's create the
+# volume and attach it to the VM. We will add a small cloud-init to the image
+# which will set the VMs hostname. You will need to set the root password
+# variable to some value. We also include our ssh key (public key) to the image
+# so that we can directly ssh into it.
+VOLNAME=$HOSTNAME
+CLOUDINIT=$(echo -e "#cloud-config\n\nhostname: $HOSTNAME\n" | base64 -w0)
+# Create the boot volume
+ionosctl volume create \
+        --datacenter-id "$DCID" \
+        --name "$VOLNAME"\
+        --image-alias $IMAGE_ALIAS \
+        --user-data "$CLOUDINIT" \
+        --type "SSD Premium" --size 300GB \
+        --ssh-key-paths "$HOME/.ssh/id_rsa.pub" \
+        --password $ROOT_PASSWORD \
+        -w
+
+# We need to get the volume id so that we can attach the volume to the server
+VOLUMEID=$(ionosctl volume list --datacenter-id $DCID | grep "$VOLNAME" | awk '{print $1}')
+echo "VolumeID: $VOLUMEID"
+
+# Now attach the newly created volume to the server
+ionosctl server volume attach \
+        --datacenter-id $DCID \
+        --server-id $SERVERID \
+        --volume-id $VOLUMEID \
+        -w
+
+# Now the server is up and running and we can ssh into it.
+ssh root@$SERVERIP
+
+```
